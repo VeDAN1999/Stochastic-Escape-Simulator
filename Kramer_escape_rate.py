@@ -7,34 +7,36 @@ import scienceplots
 
 (''' Now optimised the escape rate code''')
 
-# --- Potential and its derivatives ---
+# --- A 1D potential and its curvature. Working with a tilted quartic for easy demonstration but can be changed as you please ---
 def potential(x):
     return x**4 - 4*x**3 + 4*x**2 - 0.6*x + 1.6
 
 def vpprime(x):
     return 12*x**2 - 24*x + 8
 
-# --- Constants and parameters ---
+# --- Potential Constants and parameters.  ---
 q0 = 0.0857  # Starting point (local minimum)
-a = 0.086
-b = 0.846
+a = 0.086 # Metastable well
+b = 0.846 # The barrier
 E_b = potential(b) - potential(a)  # Barrier height
 
-w = (1 / (2*np.pi)) * np.sqrt(abs(vpprime(a)) * abs(vpprime(b)))  # Prefactor
-dt = 0.01
-sdt = math.sqrt(dt)
-N = 500  # Number of particles
-Nsteps = 50000 # Time steps
-mu, sigma = 0, 1  # Wiener process parameters
+w = (1 / (2*np.pi)) * np.sqrt(abs(vpprime(a)) * abs(vpprime(b)))  # Standard Kramers' Prefactor
+dt = 0.01 # Time step. 0.01 is a standard and (usually) reliable choice but can be made smaller.
+sdt = math.sqrt(dt) # Euler-Maruyama scheme and the Wiener process -- setting up the sqrt(2D dt) factor.
+N = 500  # Number of particles 
+Nsteps = 50000 # Total number of Time steps, i.e. full time interval.
+mu, sigma = 0, 1  # Wiener process parameters -- zero mean and variance unity.
 
-# Range of noise strengths
+# Range of noise strengths. 
 D_vals = np.linspace(0.1, 4, 300)
 
-# --- Numba-accelerated functions ---
+# --- Numba-accelerated functions for performance optimisation ---
+# --- Conservative force in the Langevin equation: F = - V'(x) ---
 @njit
 def force_numba(x):
     return -4*x**3 + 12*x**2 - 8*x + 0.6
-
+# --- The Main code ---
+# --- x_i+1 = x+i + force dt + sqrt(2 D W_t) --- Euler Maruyama algorithm
 @njit
 def simulate_escape_times(N, Nsteps, dt, sdt, D_vals, q0):
     escape_time = np.zeros((len(D_vals), N))
@@ -46,14 +48,14 @@ def simulate_escape_times(N, Nsteps, dt, sdt, D_vals, q0):
         for t in range(Nsteps):
             noise = sdt * np.sqrt(2 * D_val) * np.random.normal(0, 1, N)
             X += dt * force_numba(X) + noise
-
+         # --- Define a point where you can be confident the particle has fully surpassed the barrier. 1.05 is chosen arbitrarily here, but can be fine-tuned.
             for i in range(N):
                 if X[i] > 1.05 and escaped[i] == 0:
                     escape_time[idx_D, i] = t * dt
                     escaped[i] = 1
     return escape_time
 
-# --- Run simulation ---
+# --- Run simulation and store all in one big array---
 escape_time_array = simulate_escape_times(N, Nsteps, dt, sdt, D_vals, q0)
 
 # Remove zeros (particles that didn't escape) and compute mean escape times
@@ -69,7 +71,7 @@ numerical_rates = np.reciprocal(mean_times)
 # --- Kramers' rate ---
 kramers_rates = w * np.exp(-E_b / D_vals)
 
-# --- Exact rate from double integral ---
+# --- Exact rate from double integral assuming delta function initial condition---
 def integrand(x, y, D):
     return (1 / D) * np.exp(potential(y) / D) * np.exp(-potential(x) / D)
 
@@ -80,7 +82,7 @@ for D in D_vals:
    
 lst = [numerical_rates, kramers_rates,exact_rates]
 
-# --- Plotting ---
+# --- Plotting: This is completely up to your taste. I provided my way of presenting it for completeness. I am a fan of the science package and recommend you check it out if not already.---
 colormap = np.array(['blue','green','orange','r'])
 k = len(colormap)
 pparam2 = dict(xlabel = r"$1/D$", ylabel = r"$\log \Gamma$")
@@ -99,7 +101,7 @@ custom_lines = [
 ]
 
 with plt.style.context(["science","no-latex","ieee","high-vis"]):
-   
+    # --- Want to plot standard arrhenius plot: 1/D against log(Rate). Should get a straight line for Kramers' with intercept the constant w.
     # --- Inverse temperature axis ---
     invD = 1 / D_vals
 
@@ -111,7 +113,7 @@ with plt.style.context(["science","no-latex","ieee","high-vis"]):
 # --- Sparse marker selection (equispaced in x) ---
     marker_idxs = np.linspace(0, len(D_vals) - 1, 20, dtype=int)
 
-# --- Plot ---
+# --- Begin the Plot ---
     fig, ax = plt.subplots(figsize=(4.5, 3.5))
 
 # Exact rate: green solid line with occasional square markers
@@ -148,11 +150,11 @@ with plt.style.context(["science","no-latex","ieee","high-vis"]):
     ax.tick_params(labelsize=10)
     ax.axvspan(1, 1/E_b, color='gray', alpha=0.2, label="Beyond semiclassical regime")
 
-# Optional: add light grid
+# Optional and a bit of customisation I am a fan of: add light grid
     ax.grid(True, linestyle=':', linewidth=0.4, alpha=0.4)
 
-
-    plt.tight_layout()
+# --- Try and avoid wasting space ---
+  plt.tight_layout()
 # plt.savefig("figures/kramers_escape_rates.pdf", dpi=600)
-    plt.show()
+  plt.show()
 

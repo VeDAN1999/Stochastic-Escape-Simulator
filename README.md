@@ -6,7 +6,9 @@ Numerical + analytical study of escape rates for overdamped Langevin dynamics in
 
 The stochastic differential equation (SDE) is
 
-$$\mathrm{d}x_t=-V'(x_t)\mathrm{d}t+\sqrt{2D}\mathrm{d}W_t$$, 
+$$
+\mathrm{d}x_t=-V'(x_t)\mathrm{d}t+\sqrt{2D}\mathrm{d}W_t, 
+$$
 
 where $W_t$ is standard Brownian motion and $D$ is the diffusion coefficient.
 
@@ -18,7 +20,7 @@ $$
 
 We compare:
 - Monte Carlo MFPT/escape rate from simulation.
-- **Kramers’ approximation:** $\Gamma_K \approx \frac{\omega_a\,\omega_b}{2\pi} \exp(-\Delta V/D)$, with $\omega_a=\sqrt{V''(a)}$, $\omega_b=\sqrt{|V''(b)|}$, and $\Delta V=V(b)-V(a)$.
+- **Kramers’ approximation:** $\Gamma_K \approx \frac{\omega_a \omega_b}{2\pi} \exp(-\Delta V/D)$, with $\omega_a=\sqrt{V''(a)}, \omega_b=\sqrt{|V''(b)|}$, and $\Delta V=V(b)-V(a)$.
 - An **exact** double-integral MFPT formula for 1D diffusion.
 
 

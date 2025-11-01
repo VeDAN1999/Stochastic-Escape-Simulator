@@ -14,11 +14,11 @@ $$
 
 We compare:
 - Monte Carlo MFPT/escape rate from simulation;
-- **Kramers’ approximation**
+- **Kramers’ approximation**  
   $$
-  \Gamma_K \approx \frac{\omega_a\,\omega_b}{2\pi}\,e^{-\Delta V/D},
+  \Gamma_K \approx \frac{\omega_a\,\omega_b}{2\pi}\,\exp\left({-\Delta V/D}\right),
   $$
-  with $\omega_a=\sqrt{V''(a)}$, $\omega_b=\sqrt{|V''(b)|}$, and $\Delta V=V(b)-V(a)$;
+  with $\omega_a=\sqrt{V''(a)}$, $\omega_b=\sqrt{\lvert V''(b) \rvert }$, and $\Delta V=V(b)-V(a)$;
 - an **exact** double-integral MFPT formula for 1D diffusion.
 
 ## Quickstart
@@ -29,4 +29,5 @@ cd Stochastic-Escape-Simulator
 python -m venv .venv && source .venv/bin/activate  # (Windows: .venv\Scripts\activate)
 pip install -r requirements.txt
 python src/kramers_rate.py  # prints Γ_K and plots potential
+
 

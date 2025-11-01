@@ -1,6 +1,6 @@
 # Stochastic Escape Simulator
 
-Numerical + analytical study of escape rates for overdamped Langevin dynamics in one dimension. Can be extended to higher dimensions/coloured noise (deferred for later) and works for many potentials $V(x)$.
+Numerical + analytical study of escape rates for overdamped Langevin dynamics in one dimension. Can be extended to higher dimensions/coloured noise (deferred for later) and works for many potentials $`V(x)`$.
 
 ## Model
 

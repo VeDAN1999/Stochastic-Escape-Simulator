@@ -6,9 +6,9 @@ Numerical + analytical study of escape rates for overdamped Langevin dynamics in
 
 The stochastic differential equation (SDE) is
 
-$\mathrm{d}x_t=-V'(x_t)\mathrm{d}t+\sqrt{2D}\mathrm{d}W_t$, where $W_t$
+$$\mathrm{d}x_t=-V'(x_t)\mathrm{d}t+\sqrt{2D}\mathrm{d}W_t$$, 
 
-is standard Brownian motion and $D$ is the diffusion coefficient.
+where $W_t$ is standard Brownian motion and $D$ is the diffusion coefficient.
 
 Time discretisation (Euler–Maruyama):
 

@@ -4,7 +4,7 @@ Numerical + analytical study of escape rates for overdamped Langevin dynamics in
 
 ## Model
 
-The SDE (Itô) is $\mathrm{d}x_t=-V'(x_t)\,\mathrm{d}t+\sqrt{2D}\,\mathrm{d}W_t$.
+The Stochastic differential equation (SDE) is $\mathrm{d}x_t=-V'(x_t) \mathrm{d}t+\sqrt{2D}\,\mathrm{d}W_t$ where $\mathmrm{d}W_t$ is a Wiener process drawn from a normal distribution with mean zero. This is the formal version of the overdamped Langevin equation.  
 
 Time discretisation (Euler–Maruyama):
 
@@ -20,7 +20,7 @@ $$
 \Gamma_K \approx \frac{\omega_a\,\omega_b}{2\pi}\,e^{-\Delta V/D}
 $$
 
-with $\omega_a=\sqrt{V''(a)}$, $\omega_b=\sqrt{|V''(b)|}$, and $\Delta V=V(b)-V(a)$;
+with $\omega_a=\sqrt{V''(a)}$, $\omega_b=\sqrt{\lvert V''(b) \rvert}$, and $\Delta V=V(b)-V(a)$;
 - an **exact** double-integral MFPT formula for 1D diffusion.
 
 

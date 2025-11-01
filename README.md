@@ -15,9 +15,10 @@ x_{n+1}=x_n - V'(x_n)\,\Delta t + \sqrt{2D\,\Delta t}\,\xi_n,\quad \xi_n\sim\mat
 $$
 
 We compare:
-- Monte Carlo MFPT/escape rate from simulation;
-- **Kramers’ approximation:** $\Gamma_K \approx \frac{\omega_a\,\omega_b}{2\pi}\,e^{-\Delta V/D}$, with $\omega_a=\sqrt{V''(a)}$, $\omega_b=\sqrt{|V''(b)|}$, and $\Delta V=V(b)-V(a)$;
-- an **exact** double-integral MFPT formula for 1D diffusion.
+- Monte Carlo MFPT/escape rate from simulation.
+- **Kramers’ approximation:** $\Gamma_K \approx \frac{\omega_a\,\omega_b}{2\pi}\,e^{-\Delta V/D}$, with $\omega_a=\sqrt{V''(a)}$, $\omega_b=\sqrt{|V''(b)|}$, and $\Delta V=V(b)-V(a)$.
+- An **exact** double-integral MFPT formula for 1D diffusion.
+
 
 
 

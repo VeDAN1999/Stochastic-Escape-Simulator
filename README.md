@@ -5,21 +5,21 @@ Numerical + analytical study of escape rates for overdamped Langevin dynamics in
 ## Model
 
 The SDE (Itô) is
-$$
+$
 \mathrm{d}x_t=-V'(x_t)\,\mathrm{d}t+\sqrt{2D}\,\mathrm{d}W_t.
-$$
+$
 
 Time discretisation (Euler–Maruyama):
-$$
+$
 x_{n+1}=x_n - V'(x_n)\,\Delta t + \sqrt{2D\,\Delta t}\, \xi_n,\quad \xi_n\sim \mathcal N(0,1).
-$$
+$
 
 We compare:
 - Monte Carlo MFPT/escape rate from simulation;
 - **Kramers’ approximation**
-$$
+$
 \Gamma_K \approx \frac{\omega_a\,\omega_b}{2\pi}\,e^{-\Delta V/D},
-$$
+  
 with $\omega_{a}=\sqrt{V''(a)}$, $\omega_{b}=\sqrt{|V''(b)|}$ and $\Delta V=V(b)-V(a)$;
 - an **exact** double-integral MFPT formula for 1D diffusion.
 

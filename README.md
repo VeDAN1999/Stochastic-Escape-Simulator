@@ -15,7 +15,7 @@ where $W_t$ is standard Brownian motion and $D$ is the diffusion coefficient.
 Time discretisation (Euler–Maruyama):
 
 ```math
-x_{n+1}=x_n - V'(x_n) \Delta t + \sqrt{2D \Delta t} \xi_n,\quad \xi_n\sim\mathcal N(0,1).
+x_{n+1}=x_n - V'(x_n) \Delta t + \sqrt{2D \Delta t} \, \xi_n,\quad \xi_n\sim\mathcal N(0,1).
 ```
 
 We compare:

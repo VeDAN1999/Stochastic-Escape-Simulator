@@ -15,13 +15,13 @@ where $W_t$ is standard Brownian motion and $D$ is the diffusion coefficient.
 Time discretisation (Euler–Maruyama):
 
 $$
-x_{n+1}=x_n - V'(x_n)\,\Delta t + \sqrt{2D\,\Delta t}\,\xi_n,\quad \xi_n\sim\mathcal N(0,1).
+x_{n+1}=x_n - V'(x_n) \Delta t + \sqrt{2D \Delta t} \xi_n,\quad \xi_n\sim\mathcal N(0,1).
 $$
 
 We compare:
 - Monte Carlo MFPT/escape rate from simulation.
 - **Kramers’ approximation:** $\Gamma_K \approx \frac{\omega_a \omega_b}{2\pi} \exp(-\Delta V/D)$,
-- We define  $\omega_i=\sqrt{\lvert V''(i) \rvert }$ and $\Delta V=V(b)-V(a)$.
+- We define  $`\omega_i=\sqrt{\lvert V''(i) \rvert }`$ and $\Delta V=V(b)-V(a)$.
 - Optionally: An **exact** double-integral MFPT formula for 1D diffusion.
 
 

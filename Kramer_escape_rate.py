@@ -21,13 +21,13 @@ b = 0.846 # The barrier
 E_b = potential(b) - potential(a)  # Barrier height
 
 w = (1 / (2*np.pi)) * np.sqrt(abs(vpprime(a)) * abs(vpprime(b)))  # Standard Kramers' Prefactor
-dt = 0.01 # Time step. 0.01 is a standard and (usually) reliable choice but can be made smaller.
+dt = 0.01 # Time step. 0.01 works pretty well, but adjust depending on computational power.
 sdt = math.sqrt(dt) # Euler-Maruyama scheme and the Wiener process -- setting up the sqrt(2D dt) factor.
-N = 500  # Number of particles 
+N = 500  # Number of particles.  
 Nsteps = 50000 # Total number of Time steps, i.e. full time interval.
 mu, sigma = 0, 1  # Wiener process parameters -- zero mean and variance unity.
 
-# Range of noise strengths. 
+# Range of noise strengths. Can depend on the potential model you use and scale of the barrier. 
 D_vals = np.linspace(0.1, 4, 300)
 
 # --- Numba-accelerated functions for performance optimisation ---
@@ -35,7 +35,7 @@ D_vals = np.linspace(0.1, 4, 300)
 @njit
 def force_numba(x):
     return -4*x**3 + 12*x**2 - 8*x + 0.6
-# --- The Main code ---
+# --- The Main Algorithm ---
 # --- x_i+1 = x+i + force dt + sqrt(2 D W_t) --- Euler Maruyama algorithm
 @njit
 def simulate_escape_times(N, Nsteps, dt, sdt, D_vals, q0):

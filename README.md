@@ -15,13 +15,14 @@ $$
 We compare:
 - Monte Carlo MFPT/escape rate from simulation;
 - **Kramers’ approximation**
- 
+
   $$
-  \Gamma_K \approx \frac{\omega_a\,\omega_b}{2\pi}\,\exp\left({-\Delta V/D}\right),
+  \Gamma_K \approx \frac{\omega_a\,\omega_b}{2\pi}\,e^{-\Delta V/D}
   $$
-  
-  with $\omega_a=\sqrt{V''(a)}$, $\omega_b=\sqrt{\lvert V''(b) \rvert }$, and $\Delta V=V(b)-V(a)$;
+
+  with $\omega_a=\sqrt{V''(a)}$, $\omega_b=\sqrt{|V''(b)|}$, and $\Delta V=V(b)-V(a)$;
 - an **exact** double-integral MFPT formula for 1D diffusion.
+
 
 ## Quickstart
 

@@ -14,7 +14,7 @@ $$
 
 We compare:
 - Monte Carlo MFPT/escape rate from simulation;
-- **Kramers’ approximation**  
+- **Kramers’ approximation**
   $$
   \Gamma_K \approx \frac{\omega_a\,\omega_b}{2\pi}\,e^{-\Delta V/D},
   $$

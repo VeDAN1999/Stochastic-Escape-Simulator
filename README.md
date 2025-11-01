@@ -4,7 +4,11 @@ Numerical + analytical study of escape rates for overdamped Langevin dynamics in
 
 ## Model
 
-The Stochastic differential equation (SDE) is $\mathrm{d}x_t=-V'(x_t) \mathrm{d}t+\sqrt{2D}\mathrm{d}W_t$ where $\mathmrm{d}W_t$ is a Wiener process drawn from a normal distribution with mean zero. $D$ is the noise strength o or diffusion coefficient. This is the formal version of the overdamped Langevin equation.  
+The stochastic differential equation (SDE) is
+$\mathrm{d}x_t=-V'(x_t)\,\mathrm{d}t+\sqrt{2D}\,\mathrm{d}W_t$,
+where $\mathrm{d}W_t$ is a Wiener process. $D$ is the noise strength
+(i.e. diffusion coefficient). This is the overdamped Langevin equation.
+
 
 Time discretisation (Euler–Maruyama):
 
@@ -16,12 +20,13 @@ We compare:
 - Monte Carlo MFPT/escape rate from simulation;
 - **Kramers’ approximation**
 
-$$
-\Gamma_K \approx \frac{\omega_a\,\omega_b}{2\pi}\,e^{-\Delta V/D}
-$$
+  $$
+  \Gamma_K \approx \frac{\omega_a\,\omega_b}{2\pi}\,e^{-\Delta V/D}
+  $$
 
-with $\omega_{a}=\sqrt{V''(a)}$, $\omega_{b}=\sqrt{\lvert V''(b) \rvert}$, and $\Delta V =V(b)-V(a)$;
+  with $\omega_a=\sqrt{V''(a)}$, $\omega_b=\sqrt{|V''(b)|}$, and $\Delta V=V(b)-V(a)$;
 - an **exact** double-integral MFPT formula for 1D diffusion.
+
 
 
 ## Quickstart

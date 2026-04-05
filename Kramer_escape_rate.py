@@ -1,160 +1,291 @@
-mport numpy as np
+import math
+import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import dblquad
 from numba import njit
-import math
-import scienceplots
+from matplotlib.lines import Line2D
+import scienceplots  
 
-(''' Now optimised the escape rate code''')
 
-# --- A 1D potential and its curvature. Working with a tilted quartic for easy demonstration but can be changed as you please ---
-def potential(x):
+
+# ============================================================
+# Potential, force, curvature
+# ============================================================
+
+def potential(x: float) -> float:
     return x**4 - 4*x**3 + 4*x**2 - 0.6*x + 1.6
 
-def vpprime(x):
+
+def force(x: float) -> float:
+    # F = -V'(x)
+    return -4*x**3 + 12*x**2 - 8*x + 0.6
+
+
+def vpp(x: float) -> float:
     return 12*x**2 - 24*x + 8
 
-# --- Potential Constants and parameters.  ---
-q0 = 0.0857  # Starting point (local minimum)
-a = 0.086 # Metastable well
-b = 0.846 # The barrier
-E_b = potential(b) - potential(a)  # Barrier height
 
-w = (1 / (2*np.pi)) * np.sqrt(abs(vpprime(a)) * abs(vpprime(b)))  # Standard Kramers' Prefactor
-dt = 0.01 # Time step. 0.01 works pretty well, but adjust depending on computational power.
-sdt = math.sqrt(dt) # Euler-Maruyama scheme and the Wiener process -- setting up the sqrt(2D dt) factor.
-N = 500  # Number of particles.  
-Nsteps = 50000 # Total number of Time steps, i.e. full time interval.
-mu, sigma = 0, 1  # Wiener process parameters -- zero mean and variance unity.
+# ============================================================
+# Problem parameters
+# ============================================================
 
-# Range of noise strengths. Can depend on the potential model you use and scale of the barrier. 
-D_vals = np.linspace(0.1, 4, 300)
+# Metastable minimum and barrier location for this quartic
+a = 0.0857
+b = 0.8464
 
-# --- Numba-accelerated functions for performance optimisation ---
-# --- Conservative force in the Langevin equation: F = - V'(x) ---
+# Start at the well minimum if comparing to Kramers / exact MFPT
+x0 = a
+
+# Absorbing point chosen slightly beyond the barrier
+x_absorb = 1.05
+
+# Barrier height and Kramers prefactor
+E_b = potential(b) - potential(a)
+omega_k = (1.0 / (2.0 * np.pi)) * np.sqrt(abs(vpp(a)) * abs(vpp(b)))
+
+# Simulation parameters
+dt = 0.01
+Nsteps = 50000
+N_particles = 500
+
+# Keep this modest at first so the exact integral is not too slow
+D_vals = np.linspace(0.12, 2.5, 80)
+
+# Noise mode:
+#   0 = white noise
+#   1 = exponentially correlated noise (OU auxiliary variable)
+noise_mode = 0
+
+# Correlation time for coloured noise
+tau_c = 0.05
+
+
+# ============================================================
+# Numba kernels
+# ============================================================
+
 @njit
 def force_numba(x):
-    return -4*x**3 + 12*x**2 - 8*x + 0.6
-# --- The Main Algorithm ---
-# --- x_i+1 = x+i + force dt + sqrt(2 D W_t) --- Euler Maruyama algorithm
+    return -4.0*x**3 + 12.0*x**2 - 8.0*x + 0.6
+
+
 @njit
-def simulate_escape_times(N, Nsteps, dt, sdt, D_vals, q0):
-    escape_time = np.zeros((len(D_vals), N))
-    for idx_D in range(len(D_vals)):
-        D_val = D_vals[idx_D]
-        X = np.full(N, q0)
-        escaped = np.zeros(N)
+def simulate_escape_statistics(
+    N_particles,
+    Nsteps,
+    dt,
+    D_vals,
+    x0,
+    x_absorb,
+    noise_mode,
+    tau_c
+):
+    """
+    Returns:
+        mean_times[j]      = mean first-passage time for D_vals[j]
+        escape_fraction[j] = fraction escaped before final time
+    """
+    nD = len(D_vals)
+    mean_times = np.full(nD, np.nan)
+    escape_fraction = np.zeros(nD)
 
-        for t in range(Nsteps):
-            noise = sdt * np.sqrt(2 * D_val) * np.random.normal(0, 1, N)
-            X += dt * force_numba(X) + noise
-         # --- Define a point where you can be confident the particle has fully surpassed the barrier. 1.05 is chosen arbitrarily here, but can be fine-tuned.
-            for i in range(N):
-                if X[i] > 1.05 and escaped[i] == 0:
-                    escape_time[idx_D, i] = t * dt
-                    escaped[i] = 1
-    return escape_time
+    for j in range(nD):
+        D = D_vals[j]
 
-# --- Run simulation and store all in one big array---
-escape_time_array = simulate_escape_times(N, Nsteps, dt, sdt, D_vals, q0)
+        X = np.full(N_particles, x0)
+        alive = np.ones(N_particles, dtype=np.uint8)
+        hit_times = np.zeros(N_particles)
 
-# Remove zeros (particles that didn't escape) and compute mean escape times
-mean_times = []
-for times in escape_time_array:
-    filtered = times[times > 0]
-    mean = np.mean(filtered) if len(filtered) > 0 else np.nan
-    mean_times.append(mean)
+        # For coloured noise, use auxiliary OU variable eta
+        if noise_mode == 1:
+            alpha = math.exp(-dt / tau_c)
+            # Stationary variance Var(eta) = 1 / (2 tau_c)
+            sigma_eta = math.sqrt((1.0 - alpha * alpha) / (2.0 * tau_c))
+            eta = np.random.normal(0.0, 1.0 / math.sqrt(2.0 * tau_c), N_particles)
 
-mean_times = np.array(mean_times)
-numerical_rates = np.reciprocal(mean_times)
+        n_alive = N_particles
 
-# --- Kramers' rate ---
-kramers_rates = w * np.exp(-E_b / D_vals)
+        for n in range(1, Nsteps + 1):
+            t_prev = (n - 1) * dt
 
-# --- Exact rate from double integral assuming delta function initial condition---
-def integrand(x, y, D):
-    return (1 / D) * np.exp(potential(y) / D) * np.exp(-potential(x) / D)
+            for i in range(N_particles):
+                if alive[i] == 0:
+                    continue
 
-exact_rates = []
-for D in D_vals:
-    val, _ = dblquad(lambda x, y: integrand(x, y, D), 0, 1.05, lambda x: -np.inf, lambda x: x)
-    exact_rates.append(1 / val)
-   
-lst = [numerical_rates, kramers_rates,exact_rates]
+                x_old = X[i]
 
-# --- Plotting: This is completely up to your taste. I provided my way of presenting it for completeness. I am a fan of the science package and recommend you check it out if not already.---
-colormap = np.array(['blue','green','orange','r'])
-k = len(colormap)
-pparam2 = dict(xlabel = r"$1/D$", ylabel = r"$\log \Gamma$")
-invD = 1/D_vals
+                if noise_mode == 0:
+                    # White noise: Euler-Maruyama
+                    x_new = x_old + dt * force_numba(x_old) + math.sqrt(2.0 * D * dt) * np.random.normal()
+
+                else:
+                    # Exponentially correlated noise via OU auxiliary process:
+                    #   dx/dt = F(x) + sqrt(2D) eta(t)
+                    #   deta = -(1/tau_c) eta dt + (1/tau_c) dW
+                    eta[i] = alpha * eta[i] + sigma_eta * np.random.normal()
+                    x_new = x_old + dt * force_numba(x_old) + math.sqrt(2.0 * D) * eta[i] * dt
+
+                X[i] = x_new
+
+                # First-passage detection with linear interpolation
+                if x_old <= x_absorb and x_new > x_absorb:
+                    denom = x_new - x_old
+                    if denom > 0.0:
+                        frac = (x_absorb - x_old) / denom
+                        frac = min(max(frac, 0.0), 1.0)
+                    else:
+                        frac = 1.0
+
+                    hit_times[i] = t_prev + frac * dt
+                    alive[i] = 0
+                    n_alive -= 1
+
+            if n_alive == 0:
+                break
+
+        n_escaped = N_particles - n_alive
+        escape_fraction[j] = n_escaped / N_particles
+
+        if n_escaped > 0:
+            mean_times[j] = np.sum(hit_times) / n_escaped
+
+    return mean_times, escape_fraction
+
+
+# ============================================================
+# Exact MFPT / exact rate
+# ============================================================
+
+def exact_rate(D, x_start, x_absorb):
+    """
+    Overdamped 1D MFPT from x_start to x_absorb:
+        T(x_start) = ∫_{x_start}^{x_absorb} dy [ e^{V(y)/D} / D ] ∫_{-∞}^{y} dz e^{-V(z)/D}
+
+    We evaluate the product as exp((V(y) - V(z))/D) / D for better numerical stability.
+    """
+    val, _ = dblquad(
+        lambda z, y: np.exp((potential(y) - potential(z)) / D) / D,
+        x_start,
+        x_absorb,
+        lambda y: -np.inf,
+        lambda y: y
+    )
+    return 1.0 / val
+
+
+# ============================================================
+# Run numerics
+# ============================================================
+
+mean_times, escape_fraction = simulate_escape_statistics(
+    N_particles=N_particles,
+    Nsteps=Nsteps,
+    dt=dt,
+    D_vals=D_vals,
+    x0=x0,
+    x_absorb=x_absorb,
+    noise_mode=noise_mode,
+    tau_c=tau_c
+)
+
+# Mark strongly censored estimates as NaN
+min_escape_fraction_for_reporting = 0.95
+numerical_rates = np.full_like(mean_times, np.nan)
+
+for j in range(len(D_vals)):
+    if not np.isnan(mean_times[j]) and escape_fraction[j] >= min_escape_fraction_for_reporting:
+        numerical_rates[j] = 1.0 / mean_times[j]
+
+# Kramers rate
+kramers_rates = omega_k * np.exp(-E_b / D_vals)
+
+# Exact rates
+exact_rates = np.array([exact_rate(D, x0, x_absorb) for D in D_vals])
+
+
+# ============================================================
+# Plotting
+# ============================================================
+
+invD = 1.0 / D_vals
 log_kramers = np.log(kramers_rates)
+log_exact = np.log(exact_rates)
 
-# Now plot the markers only at those visually even x-locations
+mask_num = np.isfinite(numerical_rates)
+invD_num = invD[mask_num]
+log_num = np.log(numerical_rates[mask_num])
 
-from matplotlib.lines import Line2D
+marker_idxs_exact = np.linspace(0, len(D_vals) - 1, 16, dtype=int)
+marker_idxs_num = np.linspace(0, len(invD_num) - 1, min(16, len(invD_num)), dtype=int) if len(invD_num) > 0 else np.array([], dtype=int)
+
+title = "Kramers vs exact and numerical escape rates"
+if noise_mode == 1:
+    title += f" (coloured noise, tau_c = {tau_c:g})"
 
 custom_lines = [
-    Line2D([0], [0], color='green', lw=2, marker='s', label="Exact rate"),
-    Line2D([0], [0], color='red', lw=2, linestyle='--', marker='o', label="Kramers' rate"),
-    Line2D([0], [0], color='blue', marker='^', linestyle='None', label="Numerical rate"),
-    Line2D([0], [0], color='black', lw=1, linestyle='--', label=r"$1/E_b$")
+    Line2D([0], [0], color="green", lw=2, marker="s", label="Exact rate"),
+    Line2D([0], [0], color="red", lw=2, linestyle="--", marker="o", label="Kramers rate"),
+    Line2D([0], [0], color="blue", marker="^", linestyle="None", label="Numerical rate"),
+    Line2D([0], [0], color="black", lw=1, linestyle="--", label=r"$1/E_b$")
 ]
 
-with plt.style.context(["science","no-latex","ieee","high-vis"]):
-    # --- Want to plot standard arrhenius plot: 1/D against log(Rate). Should get a straight line for Kramers' with intercept the constant w.
-    # --- Inverse temperature axis ---
-    invD = 1 / D_vals
+with plt.style.context(["science", "no-latex", "ieee", "high-vis"]):
+    fig, ax = plt.subplots(figsize=(4.8, 3.6))
 
-# --- Precompute logs ---
-    log_kramers = np.log(kramers_rates)
-    log_exact = np.log(exact_rates)
-    log_numerical = np.log(numerical_rates)
+    # Exact
+    ax.plot(invD, log_exact, color="green", linestyle="-", linewidth=1.5)
+    ax.plot(invD[marker_idxs_exact], log_exact[marker_idxs_exact], "s", color="green", markersize=3)
 
-# --- Sparse marker selection (equispaced in x) ---
-    marker_idxs = np.linspace(0, len(D_vals) - 1, 20, dtype=int)
+    # Kramers
+    ax.plot(invD, log_kramers, color="red", linestyle="--", linewidth=1.5)
+    ax.plot(invD[marker_idxs_exact], log_kramers[marker_idxs_exact], "o", color="red", markersize=3)
 
-# --- Begin the Plot ---
-    fig, ax = plt.subplots(figsize=(4.5, 3.5))
+    # Numerical
+    if len(invD_num) > 0:
+        ax.plot(invD_num, log_num, "^", color="blue", markersize=3, linestyle="None")
 
-# Exact rate: green solid line with occasional square markers
-    ax.plot(invD, log_exact, color='green', linestyle='-', linewidth=1.5, label="Exact rate")
-    ax.plot(invD[marker_idxs], log_exact[marker_idxs], 's', color='green', markersize=3)
+    # Vertical barrier scale
+    ax.axvline(x=1.0 / E_b, color="black", linestyle="--", linewidth=1.0)
 
-# Kramers: red dashed line with occasional circle markers
-    ax.plot(invD, log_kramers, color='red', linestyle='--', linewidth=1.5, label="Kramers' rate")
-    ax.plot(invD[marker_idxs], log_kramers[marker_idxs], 'o', color='red', markersize=3)
+    # Semiclassical / non-semiclassical shading
+    ax.axvspan(1.0, 1.0 / E_b, color="gray", alpha=0.2)
 
-# Numerical: blue discrete triangle markers only
-    ax.plot(invD, log_numerical, '^', color='blue', markersize=3, linestyle='None', label="Numerical rate")
+    ax.set_xlabel(r"$1/D$")
+    ax.set_ylabel(r"$\log \Gamma$")
+    ax.set_title(title, fontsize=10)
 
-# Barrier height vertical line
-    ax.axvline(x=1/E_b, color='black', linestyle='--', linewidth=1, label=r"$1/E_b$")
+    ax.set_xlim(1.0, max(invD))
+    y_min = min(np.nanmin(log_exact), np.nanmin(log_kramers), np.nanmin(log_num) if len(log_num) > 0 else np.nanmin(log_exact))
+    y_max = max(np.nanmax(log_exact), np.nanmax(log_kramers), np.nanmax(log_num) if len(log_num) > 0 else np.nanmax(log_exact))
+    ax.set_ylim(y_min - 0.4, y_max + 0.4)
 
-# --- Axes and Labels ---
-    ax.set_xlabel(r"$1/D$", fontsize=10)
-    ax.set_ylabel(r"$\log \Gamma$", fontsize=10)
-    ax.set_ylim(np.nanmin(log_numerical) - 0.5, np.nanmax(log_kramers) + 0.5)
-    ax.text(1.57, -2, r"$D \gtrsim E_b$",
-        color="black", fontsize=10,
-        horizontalalignment="center", verticalalignment="center",
-        bbox=dict(boxstyle="round", fc="white", ec="black", pad=0.2))
+    ax.text(
+        1.0 / E_b + 0.15,
+        y_min + 0.2,
+        r"$D \gtrsim E_b$",
+        fontsize=9,
+        bbox=dict(boxstyle="round", fc="white", ec="black", pad=0.2)
+    )
 
-# --- Legend ---
-    ax.legend(handles=custom_lines, fontsize=9, loc="upper right", frameon = True, handlelength=2.5,
-    borderpad=0.5,
-    labelspacing=0.4)
+    ax.legend(
+        handles=custom_lines,
+        fontsize=8.5,
+        loc="upper right",
+        frameon=True,
+        handlelength=2.2,
+        borderpad=0.5,
+        labelspacing=0.4
+    )
 
-# --- Title ---
-    ax.set_title(r"Kramers' formula versus exact and numerical rates", fontsize=10)
-    ax.set_xlim(1, 8) # Focus more on the arrhenius tail
-    ax.tick_params(labelsize=10)
-    ax.axvspan(1, 1/E_b, color='gray', alpha=0.2, label="Beyond semiclassical regime")
+    ax.grid(True, linestyle=":", linewidth=0.4, alpha=0.4)
+    plt.tight_layout()
+    plt.show()
 
-# Optional and a bit of customisation I am a fan of: add light grid
-    ax.grid(True, linestyle=':', linewidth=0.4, alpha=0.4)
 
-# --- Try and avoid wasting space ---
-  plt.tight_layout()
-# plt.savefig("figures/kramers_escape_rates.pdf", dpi=600)
-  plt.show()
+# ============================================================
+# Diagnostic printout
+# ============================================================
 
+print("Barrier height E_b =", E_b)
+print("Kramers prefactor =", omega_k)
+print("Minimum escape fraction across D grid =", np.min(escape_fraction))

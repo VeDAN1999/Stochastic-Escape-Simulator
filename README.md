@@ -1,42 +1,39 @@
 # Stochastic Escape Simulator
 
-Numerical + analytical study of escape rates for overdamped Langevin dynamics in one dimension. Can be extended to higher dimensions/coloured noise (deferred for later) and works for many potentials $`V(x)`$.
+Numerical and analytical study of escape rates for overdamped Langevin dynamics in one dimension.
 
-## Model
+This repository compares three approaches to metastable escape in a tilted quartic potential:
 
-The stochastic differential equation (SDE) is
+- **Numerical simulation** using Euler–Maruyama time stepping and first-passage times
+- **Kramers' rate** in the weak-noise regime
+- **Exact 1D rate** computed from the mean first-passage-time integral
 
-```math
-\mathrm{d}x_t=-V'(x_t) \, \mathrm{d}t + \sqrt{2D} \, \mathrm{d}W_t, 
-```
+An optional extension includes **exponentially correlated coloured noise** via an Ornstein–Uhlenbeck auxiliary process.
 
-where $W_t$ is standard Brownian motion and $D$ is the diffusion coefficient.
+---
 
-Time discretisation (Euler–Maruyama):
+## Features
 
-```math
-x_{n+1}=x_n - V'(x_n) \Delta t + \sqrt{2D \Delta t} \, \xi_n,\quad \xi_n\sim\mathcal N(0,1).
-```
+- Simulation of overdamped stochastic escape in a metastable potential
+- Comparison of numerical, exact, and asymptotic escape rates
+- Arrhenius-style plots of `log(rate)` against `1/D`
+- Optional coloured-noise switch
+- Numba acceleration for faster Monte Carlo runs
 
-We compare:
-- Monte Carlo MFPT/escape rate from simulation.
-- **Kramers’ approximation:**
-```math
-\Gamma_K \approx \frac{\omega_a \omega_b}{2\pi} \exp(-\Delta V/D)
-```
-where $\omega_i$ denotes the curvature at the minimum and barrier.
-- Optionally: An **exact** double-integral MFPT formula for 1D diffusion.
+---
 
+## Repository structure
 
-
-
-## Quickstart
-
-```bash
-git clone https://github.com/VeDAN1999/Stochastic-Escape-Simulator
-cd Stochastic-Escape-Simulator
-python -m venv .venv && source .venv/bin/activate  # (Windows: .venv\Scripts\activate)
-pip install -r requirements.txt
-python src/kramers_rate.py  # prints Γ_K and plots potential
-
+```text
+.
+├─ docs/
+│  └─ maths.md
+├─ images/
+│  └─ arrhenius_example.png
+├─ src/
+│  └─ stochastic_escape_simulator.py
+├─ .gitignore
+├─ LICENSE
+├─ README.md
+└─ requirements.txt
 

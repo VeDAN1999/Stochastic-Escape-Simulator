@@ -50,7 +50,7 @@ See [`docs/maths.md`](docs/maths.md) for the Langevin model, the Kramers derivat
 
 ## Related work
 
-The path-integral view of the same problem — where the dominant escape paths become complex — is the subject of my PhD thesis, [*Complex saddles in stochastic path integrals*](https://etheses.whiterose.ac.uk/id/eprint/38065/) (Leeds, 2025), and of [Baldwin, McKane & Fitzgerald, *Complex paths for real stochastic processes*](https://arxiv.org/abs/2604.09398) (2026).
+The path-integral view of the same problem — where the dominant escape paths become complex — is the subject of my PhD thesis, [*Complex saddles in stochastic path integrals*](https://etheses.whiterose.ac.uk/id/eprint/38065/) (Leeds, 2025), and of [Baldwin, McKane & Fitzgerald, *Complex paths for real stochastic processes*](https://iopscience.iop.org/article/10.1088/1751-8121/ae8a00), J. Phys. A: Math. Theor. (2026) ([arXiv](https://arxiv.org/abs/2604.09398)).
 
 ## Licence
 
